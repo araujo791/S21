@@ -10,7 +10,7 @@ import sys
 import time
 from pathlib import Path
 
-from .core import MIB, check_write_candidate, deep_check, inspect_blob, sha
+from .core import MIB, check_write_candidate, deep_check, inspect_blob, sha, external_environment
 
 REGIONS = {'full': (None, None, 16 * MIB), 'bios': ('-bios', 'bios', 8 * MIB),
            'descriptor': ('-desc', 'fd', 4096), 'sps': ('-me', 'me', 0x7FF000)}
@@ -104,7 +104,8 @@ def run_checked(args, backend, log, writing=False):
     log.append('COMANDO: ' + subprocess.list2cmdline([str(v) for v in args]))
     p = subprocess.run(args, cwd=str(Path(args[0]).resolve().parent), stdin=subprocess.DEVNULL,
                        capture_output=True, encoding='utf-8', errors='replace',
-                       timeout=None if writing else 180)
+                       timeout=None if writing else 180, env=external_environment(),
+                       creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
     text = p.stdout + p.stderr
     log.append(text[-2_000_000:])
     bad = p.returncode != 0 or bool(re.search(r'Error\s+\d+\s*:', text, re.I))
@@ -244,7 +245,8 @@ def worker(job_path):
 
 
 def launch_worker(job_path, launcher):
-    args = [sys.executable, '-E', '-s', str(launcher), '--worker', str(job_path)]
+    args = ([sys.executable, '--worker', str(job_path)] if getattr(sys, 'frozen', False)
+            else [sys.executable, '-E', '-s', str(launcher), '--worker', str(job_path)])
     if not is_admin():
         if os.name == 'nt':
             def literal(value):

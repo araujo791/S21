@@ -1,0 +1,2 @@
+e37fef0885f526a741de34ad4588525c5e922db35d631757d62e97894698955d  Convenant-BIOS-Tools-0.2.0-Windows-x64.zip
+fd881cef8190e89e8d51eff2e0595440beef5909e06827ac995735a6fa02df7c  Convenant-BIOS-Tools-0.2.0-CachyOS-x64.tar.gz

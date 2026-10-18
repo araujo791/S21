@@ -1,17 +1,14 @@
-"""No hardware access: exercise command boundaries, worker verification and HTTP."""
+"""No hardware access: exercise command boundaries, worker and workspace checks."""
 import json
 import os
 import sys
 import tempfile
-import threading
 import unittest
-import urllib.error
-import urllib.request
 from pathlib import Path
 from unittest.mock import patch
 
 from convenant import core, hardware
-from convenant.server import App
+from convenant.workspace import Workspace
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -67,73 +64,59 @@ class CommandBoundaries(unittest.TestCase):
         self.assertEqual(len(args), 4)
 
 
-class HttpBoundaries(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.tmp = tempfile.TemporaryDirectory()
-        cls.app = App(Path(cls.tmp.name))
-        cls.thread = threading.Thread(target=cls.app.serve_forever, daemon=True); cls.thread.start()
-        cls.url = 'http://127.0.0.1:%d' % cls.app.server_address[1]
+class WorkspaceBoundaries(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory()
+        self.app=Workspace(Path(self.tmp.name),initialize_inventory=False)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.app.shutdown(); cls.app.server_close(); cls.thread.join(); cls.tmp.cleanup()
+    def tearDown(self):
+        self.tmp.cleanup()
 
-    def request(self, path, body=None, token=True, origin=None, host=None):
-        headers = {'X-Convenant-Token': self.app.token} if token else {}
-        if origin: headers['Origin'] = origin
-        if host: headers['Host'] = host
-        data = body if isinstance(body, bytes) else json.dumps(body).encode() if body is not None else None
-        return urllib.request.urlopen(urllib.request.Request(self.url + path, data=data, headers=headers), timeout=10)
-
-    def test_interface_and_no_implicit_hardware(self):
-        with patch('convenant.server.launch_worker') as worker:
-            with self.request('/') as response:
-                self.assertIn(b'CONVENANT', response.read())
+    def test_initialization_does_not_access_hardware(self):
+        with patch('convenant.workspace.launch_worker') as worker:
+            Workspace(Path(self.tmp.name),initialize_inventory=False)
             worker.assert_not_called()
 
-    def test_unauthenticated_post_is_rejected(self):
-        with self.assertRaises(urllib.error.HTTPError) as cm:
-            self.request('/api/upload', b'abc', token=False)
-        self.assertEqual(cm.exception.code, 403)
-
-    def test_cross_origin_is_rejected(self):
-        with self.assertRaises(urllib.error.HTTPError) as cm:
-            self.request('/api/settings', {}, origin='https://example.org')
-        self.assertEqual(cm.exception.code, 403)
-
-    def test_host_rebinding_is_rejected(self):
-        with self.assertRaises(urllib.error.HTTPError) as cm:
-            self.request('/', host='attacker.invalid')
-        self.assertEqual(cm.exception.code, 403)
-
-    def test_uploaded_firmware_requires_token_to_download(self):
-        with self.request('/api/upload?name=example.bin', b'abc') as response:
-            ident = json.loads(response.read())['id']
-        with self.assertRaises(urllib.error.HTTPError) as cm:
-            self.request('/api/download/' + ident, token=False)
-        self.assertEqual(cm.exception.code, 403)
-        with self.request('/api/download/' + ident) as response:
-            self.assertEqual(response.read(), b'abc')
+    def test_saved_file_matches_original_bytes(self):
+        meta=self.app.save_blob(b'abc','sample.bin')
+        self.assertEqual(self.app.file(meta['id']).read_bytes(),b'abc')
 
     def test_path_traversal_rejected(self):
-        with self.assertRaises(ValueError):
-            self.app.file('../../etc/passwd')
+        with self.assertRaises(ValueError):self.app.file('../../etc/passwd')
+
+    def test_empty_upload_rejected(self):
+        with self.assertRaises(ValueError):self.app.save_blob(b'','empty.bin')
+
+    def test_oversized_upload_rejected(self):
+        with self.assertRaises(ValueError):self.app.save_blob(bytes(16*core.MIB+1),'large.bin')
 
     def test_busy_worker_blocks_second_operation(self):
         self.app.lock.acquire()
         try:
-            with self.assertRaisesRegex(ValueError, 'andamento'):
-                self.app.start_job({'action': 'backup', 'region': 'bios'})
-        finally:
-            self.app.lock.release()
+            with self.assertRaisesRegex(ValueError,'andamento'):
+                self.app.start_job({'action':'backup','region':'bios'})
+        finally:self.app.lock.release()
 
     def test_write_without_preparation_cannot_start_worker(self):
-        meta = self.app.save_blob(b'abc', 'a.bin')
-        with patch.object(self.app, 'tools', return_value={'backend':'fpt','fpt':sys.executable,'uefiextract':''}), patch('convenant.server.launch_worker') as worker:
-            with self.assertRaisesRegex(ValueError, 'Prepare'):
+        meta=self.app.save_blob(b'abc','a.bin')
+        with patch.object(self.app,'tools',return_value={'backend':'fpt','fpt':sys.executable,'uefiextract':''}),patch('convenant.workspace.launch_worker') as worker:
+            with self.assertRaisesRegex(ValueError,'Prepare'):
                 self.app.start_job({'action':'write','file':meta['id'],'confirmation':'GRAVAR BIOS','acknowledged':True})
             worker.assert_not_called()
+
+    def test_untrusted_display_filename_cannot_overwrite_path(self):
+        meta=self.app.save_blob(b'abc','../../source.bin')
+        self.assertEqual(meta['name'],'source.bin')
+        self.assertEqual(self.app.file(meta['id']).parent,self.app.data/'files')
+        self.assertFalse((Path(self.tmp.name)/'source.bin').exists())
+
+    def test_firmware_file_is_private_on_posix(self):
+        meta=self.app.save_blob(b'abc','sample.bin')
+        if os.name!='nt':self.assertEqual(self.app.file(meta['id']).stat().st_mode&0o777,0o600)
+
+    def test_failed_operation_releases_lock(self):
+        with self.assertRaises(ValueError):self.app.start_job({'action':'erase'})
+        self.assertFalse(self.app.lock.locked())
 
 
 class PrivateFirmwareFixtures(unittest.TestCase):

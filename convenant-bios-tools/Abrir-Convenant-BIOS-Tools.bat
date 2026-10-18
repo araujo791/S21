@@ -1,10 +1,8 @@
 @echo off
-setlocal
 cd /d "%~dp0"
-if exist "runtime\windows\python.exe" (
-  "runtime\windows\python.exe" -E -s "convenant_bios_tools.py"
+if exist "Convenant-BIOS-Tools.exe" (
+  start "" "%~dp0Convenant-BIOS-Tools.exe"
 ) else (
-  echo Runtime portatil ausente. Extraia o pacote completo antes de abrir.
-  echo Para desenvolvimento com Python instalado: python convenant_bios_tools.py
+  echo Baixe e extraia o pacote nativo 0.2.0 para abrir o executavel.
+  pause
 )
-pause

@@ -5,6 +5,8 @@ import struct
 import subprocess
 import tempfile
 import shutil
+import os
+import sys
 from pathlib import Path
 
 from studio.firmware import analyze, sha
@@ -13,6 +15,17 @@ from studio.platform_update import CODE_SHA256, build
 MIB = 1024 * 1024
 UPDATED_CODE = 'd54e3a3656ea1153b02aa46457ef100cc6fe04083b8ef5d9bcac8d659e2fc373'
 PROFILES = {CODE_SHA256: '002-original', UPDATED_CODE: '002-microcodigos-experimental'}
+
+
+def external_environment():
+    env = os.environ.copy()
+    if getattr(sys, 'frozen', False) and os.name != 'nt':
+        original = env.get('LD_LIBRARY_PATH_ORIG')
+        if original:
+            env['LD_LIBRARY_PATH'] = original
+        else:
+            env.pop('LD_LIBRARY_PATH', None)
+    return env
 
 
 def descriptor(data):
@@ -115,7 +128,7 @@ def deep_check(path, executable):
         target = Path(directory) / 'image.bin'
         shutil.copyfile(path, target)
         p = subprocess.run([str(executable), str(target), 'report'], capture_output=True,
-                           encoding='utf-8', errors='replace', timeout=120)
+                           encoding='utf-8', errors='replace', timeout=120, env=external_environment())
         report_file = Path(str(target) + '.report.txt')
         inventory = report_file.read_text(errors='replace') if report_file.is_file() else ''
     log = p.stdout + p.stderr
