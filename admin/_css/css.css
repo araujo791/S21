@@ -1,0 +1,132 @@
+body{
+	font-family:Arial, Helvetica, sans-serif;
+	
+	  background-image: url(../_imgs/bg_lateral.png);
+      background-repeat: repeat-y;
+      background-position: left;
+      
+      
+	font-size:12px;
+	margin:0;
+	padding:0;
+	border:0;
+	background-color:#f7f7f7;
+
+
+	}
+	
+
+#topo{
+	background-image:url(../_imgs/bg_topo.png);
+	background-repeat:repeat-x;
+	width:100%;
+	height:114px;
+	color:#FFF;
+}
+#rodape{
+	background-image:url(../_imgs/bg_rodape.png);
+	background-repeat:repeat-x;
+	width:100%;
+	height:37px;
+	color:#FFF;
+	margin-top:50px;
+	text-align:center;
+}
+#topo .topo{
+	color:#FFF;
+
+}
+#topo .topo a{
+	color:#FFF;
+	text-decoration:none;
+
+}
+#topo .topo a:hover{
+	color:#FFF;
+	text-decoration:underline;
+}
+#topo .botao{
+	padding-top:18px;
+	}
+
+#menu_left{
+	background-image:url(../_imgs/bg_menu_left.png);
+	background-repeat:repeat-y;
+	width:260px;
+	height:auto;
+	
+}
+#menu_left .titulo_menu_left{
+	color: #000;
+	font-weight:bold;
+	font-size:14px;
+}
+#menu_left .titulo_menu_left  a {  	
+	color: #000;
+	text-decoration: none;
+}
+#menu_left .titulo_menu_left a:hover {   	
+	color: #000;
+	text-decoration: underline;
+}
+#menu_left_texto{
+padding:5px;
+width:234px;
+}
+#navegacao_1{
+	background-image:url(../_imgs/bg_navegacao1.png);
+	background-repeat:repeat-x;
+    width:100%;
+	height:25px;
+    font-weight:bold;
+	}
+
+#navegacao_2{
+	background-image:url(../_imgs/bg_navegacao2.png);
+ background-repeat:repeat-x;
+    width:100%;
+	height:44px;	
+	color:#FFF;
+
+	}
+#navegacao_2_texto{
+padding-top:5px;
+ font-weight:bold;
+}
+
+#fundo_conteudo{
+background-color:#F1F2F1;
+margin-left:3px;}
+
+
+.class_inputs{
+
+ width: -webkit-calc(100% - 10px);  /* para Chrome */
+ width: -moz-calc(100% - 10px);     /* para Firefox */
+ width: calc(100% - 10px);          /* para suporte nativo */
+ 
+border:1px solid #dedede;
+padding:4px;
+}
+.class_selects{
+
+ width: 100%;
+ 
+border:1px solid #dedede;
+padding:4px;
+
+
+
+}
+#introducao_pgs{
+padding-left:10px;
+min-height:600px;
+height:auto;
+}
+#tables td{
+padding:3px;
+}
+
+
+
+
