@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.bin
+*.rom
+*.fd
+*.cap
+*.log
+*.dump/
+dados-convenant/
+inputs/
+runtime/
+tools/FPT/
+tools/uefi/
+dist/
+.venv/

@@ -1,0 +1,2 @@
+*.bat text eol=crlf
+licenses/* text eol=lf
