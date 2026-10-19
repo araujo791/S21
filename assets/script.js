@@ -31,11 +31,47 @@ dialog.addEventListener('click', event => {
   if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) dialog.close();
 });
 dialog.addEventListener('close', () => document.body.classList.remove('modal-open'));
-document.querySelector('#contact-form').addEventListener('submit', event => {
+const contactForm = document.querySelector('#contact-form');
+const formStatus = document.querySelector('#form-status');
+const submitButton = contactForm.querySelector('[type=submit]');
+let sending = false;
+async function loadContactToken() {
+  const response = await fetch(contactForm.action, {
+    headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store',
+  });
+  const data = await response.json();
+  if (!response.ok || !data.token) throw new Error('Não foi possível iniciar o contato. Atualize a página ou ligue para a central.');
+  contactForm.elements.token.value = data.token;
+}
+// O site pode continuar sendo visualizado em hospedagens estáticas; o envio requer PHP.
+loadContactToken().catch(() => {});
+contactForm.addEventListener('submit', async event => {
   event.preventDefault();
-  const data = new FormData(event.currentTarget);
-  const body = `Nome: ${data.get('nome')}\nEmpresa: ${data.get('empresa') || 'Não informada'}\nE-mail: ${data.get('email')}\nTelefone: ${data.get('telefone')}\n\n${data.get('mensagem')}`;
-  const url = 'mailto:contato@s21.com.br?subject=' + encodeURIComponent('Contato S21 — ' + data.get('assunto')) + '&body=' + encodeURIComponent(body);
-  document.querySelector('#form-status').textContent = 'Mensagem preparada. Conclua o envio no seu aplicativo de e-mail. Se ele não abrir, escreva para contato@s21.com.br.';
-  window.location.href = url;
+  if (sending) return;
+  sending = true;
+  submitButton.disabled = true;
+  contactForm.setAttribute('aria-busy', 'true');
+  formStatus.textContent = 'Enviando sua mensagem…';
+  try {
+    if (!contactForm.elements.token.value) await loadContactToken();
+    const response = await fetch(contactForm.action, {
+      method: 'POST', body: new FormData(contactForm),
+      headers: { Accept: 'application/json' }, credentials: 'same-origin',
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      if (response.status === 403) contactForm.elements.token.value = '';
+      throw new Error(data.message || 'Não foi possível enviar sua mensagem. Tente novamente.');
+    }
+    contactForm.reset();
+    formStatus.textContent = data.message;
+  } catch (error) {
+    formStatus.textContent = error instanceof SyntaxError || error instanceof TypeError
+      ? 'Não foi possível confirmar o envio. Tente mais tarde ou escreva para contato@s21.com.br.'
+      : error.message;
+  } finally {
+    sending = false;
+    submitButton.disabled = false;
+    contactForm.removeAttribute('aria-busy');
+  }
 });
