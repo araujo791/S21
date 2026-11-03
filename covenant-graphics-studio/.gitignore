@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.rom
+*.bin
+build/
+dist/
+smoke-*
+.venv/
