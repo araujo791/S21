@@ -15,6 +15,7 @@ import zipfile
 import zlib
 
 from .firmware import require, sha
+from . import __version__
 
 VERSION = 1
 MAX_PROJECT = 32 * 1024 * 1024
@@ -332,7 +333,7 @@ def export_package(path,project,stock,donor,catalog,donor_sha):
                 (q.get('store') or {}).get('name',''),hex(q['offset']) if 'offset' in q else '',q.get('width',''),c['reason']]
         # Spreadsheet viewers must not execute formulas from user/firmware labels.
         writer.writerow([("'"+str(x)) if str(x).startswith(('=','+','-','@','\t','\r')) else x for x in fields])
-    manifest={'app':'Covenant Graphics Studio','version':'0.1.0','stock_sha256':stock['sha256'],
+    manifest={'app':'Covenant Graphics Studio','version':__version__,'stock_sha256':stock['sha256'],
               'bios_id':stock['bios_id'],'links':summary(project),'firmware_compiler_implemented':False,
               'runtime_adapter_implemented':False,'flashable_rom_included':False,'firmware_modified':False,
               'callbacks_executed':False,'hardware_tested':False}

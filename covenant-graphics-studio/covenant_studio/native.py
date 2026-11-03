@@ -7,7 +7,7 @@ import math
 import uuid
 
 from PySide6.QtCore import Qt, QObject, QRunnable, QThreadPool, Signal, QTimer, QRectF, QPointF, QSize
-from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QFont, QFontMetrics, QPixmap, QImage, QIcon, QKeySequence, QShortcut
+from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QFont, QFontMetrics, QPixmap, QImage, QImageReader, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QSplitter,
     QLabel,QPushButton,QLineEdit,QTreeWidget,QTreeWidgetItem,QTabWidget,QPlainTextEdit,
     QGraphicsView,QGraphicsScene,QGraphicsObject,QGraphicsItem,QFileDialog,QMessageBox,
@@ -166,9 +166,12 @@ class BindDialog(QDialog):
 class MainWindow(QMainWindow):
     def __init__(self,root=None):
         super().__init__();self.root=Path(root) if root else Path(__file__).resolve().parents[1]
-        self.setWindowTitle('Covenant Graphics Studio · projeto gráfico da BIOS');self.resize(1540,920);self.setStyleSheet(STYLE)
+        self.setWindowTitle(f'Covenant Graphics Studio {__version__} · projeto gráfico da BIOS');self.resize(1540,920);self.setStyleSheet(STYLE)
         self.donor_blob=(self.root/'assets/doadora-hii.json').read_bytes();self.donor=json.loads(self.donor_blob);self.donor_sha=sha(self.donor_blob)
         self.catalog=json.loads((self.root/'assets/catalogo.json').read_text());self.asset_info={i['id']:i for i in self.catalog['images']}
+        cache=self.root/'assets/fallback-png/catalogo.json'
+        self.png_fallbacks=json.loads(cache.read_text()) if cache.is_file() else {}
+        self.fallbacks_used=set()
         for aid,item in self.asset_info.items():
             require(Path(aid).name==aid and sha((self.root/'assets/imagens'/aid).read_bytes())==item['sha256'],'Recurso gráfico ausente ou modificado no pacote.')
         self.stock=None;self.project=None;self.current_page=None;self.selected_id=None;self.dirty=False;self.busy=False
@@ -293,14 +296,30 @@ class MainWindow(QMainWindow):
         if aid not in self.pixmaps:
             override=self.project['asset_overrides'].get(aid) if self.project else None
             if override:
-                q=QImage.fromData(base64.b64decode(override));require(not q.isNull(),'Imagem inválida.')
-                self.pixmaps[aid]=QPixmap.fromImage(q)
-            else:self.pixmaps[aid]=QPixmap(str(self.root/'assets/imagens'/aid))
+                q=QImage.fromData(base64.b64decode(override))
+                require(not q.isNull(),f'Não foi possível decodificar a imagem editada {aid}. Extraia o pacote atualizado completo, que inclui o componente JPEG.')
+            else:
+                reader=QImageReader(str(self.root/'assets/imagens'/aid));q=reader.read()
+                if q.isNull() and aid in self.png_fallbacks:
+                    fallback=self.png_fallbacks[aid]
+                    require(Path(fallback['file']).name==fallback['file'],'Caminho de imagem alternativa inválido.')
+                    path=self.root/'assets/fallback-png'/fallback['file']
+                    require(path.is_file() and sha(path.read_bytes())==fallback['sha256'],f'Imagem alternativa ausente ou alterada: {aid}. Extraia todo o ZIP atualizado.')
+                    q=QImageReader(str(path)).read()
+                    if not q.isNull():self.fallbacks_used.add(aid)
+                require(not q.isNull(),f'Não foi possível abrir o recurso gráfico {aid}. Extraia todo o ZIP atualizado. Detalhe: {reader.errorString()}')
+            expected=self.asset_info[aid]
+            require(q.width()==expected['width'] and q.height()==expected['height'],f'Dimensões inesperadas no recurso gráfico {aid}.')
+            pix=QPixmap.fromImage(q)
+            require(not pix.isNull() and pix.width()>0 and pix.height()>0,f'Não foi possível preparar o recurso gráfico {aid}.')
+            self.pixmaps[aid]=pix
         return self.pixmaps[aid]
     def redraw(self,*args):
         self.scene.clear()
         bg=self.page()['background'] if self.project else self.catalog['background']
-        pix=self.asset_pixmap(bg);item=self.scene.addPixmap(pix);item.setScale(1024/pix.width())
+        pix=self.asset_pixmap(bg)
+        require(not pix.isNull() and pix.width()>0,'O fundo gráfico não foi carregado. Extraia todo o pacote atualizado.')
+        item=self.scene.addPixmap(pix);item.setScale(1024/pix.width())
         brand=self.scene.addPixmap(self.asset_pixmap(self.catalog['brand']));brand.setPos(420,17);brand.setScale(1.7);brand.setZValue(10)
         x99=self.scene.addSimpleText('X99',QFont('Segoe UI',28,QFont.Weight.Bold));x99.setBrush(QColor('#e7e9ef'));x99.setPos(28,8)
         title=self.page()['title'] if self.project else 'Abra sua BIOS 002 para iniciar'
@@ -458,6 +477,9 @@ class MainWindow(QMainWindow):
             except Exception as exc:self.error(str(exc))
     def load_project_from(self,path):
         p=read_project(path,self.stock,self.donor,self.catalog,self.donor_sha)
+        for aid,encoded in p['asset_overrides'].items():
+            q=QImage.fromData(base64.b64decode(encoded))
+            require(not q.isNull(),f'Não foi possível decodificar a imagem editada {aid}. O projeto anterior foi preservado.')
         self.project=p;self.index_project();self.populate_trees();self.pixmaps.clear();self.current_page=p['pages'][0]['id'];self.selected_id=None;self.dirty=False;self.redraw()
     def open_project(self):
         if not self.stock:return
@@ -484,7 +506,10 @@ class MainWindow(QMainWindow):
 
 
 def start(args):
+    import PySide6
     app=QApplication.instance() or QApplication([])
+    plugins=Path(PySide6.__file__).resolve().parent/'plugins'
+    if plugins.is_dir():app.addLibraryPath(str(plugins))
     window=MainWindow();window.show()
     if getattr(args,'smoke_bios',None):
         window.load_bios(args.smoke_bios)
@@ -495,7 +520,8 @@ def start(args):
             if args.smoke_report:
                 Path(args.smoke_report).write_text(json.dumps({'native_window':True,'bios_id':window.stock['bios_id'],
                     'forms':len(window.stock['forms']),'questions':len(window.qmap),'links':summary(window.project),
-                    'browser_used':False,'firmware_compiler_implemented':False},indent=2)+'\n')
+                    'browser_used':False,'firmware_compiler_implemented':False,'version':__version__,
+                    'png_fallbacks_used':sorted(window.fallbacks_used)},indent=2)+'\n')
             window.dirty=False;app.quit()
         timer=QTimer();timer.timeout.connect(finish);timer.start(100)
     return app.exec()

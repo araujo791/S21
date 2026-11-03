@@ -11,12 +11,17 @@
   },
   "browser_used": false,
   "firmware_compiler_implemented": false,
-  "tests_passed": 40,
+  "tests_passed": 49,
   "tests_failed": 0,
   "tests_skipped": 0,
   "test_platform": "Qt 6.8.3 / Linux offscreen",
   "windows_launcher_pe_x64_gui_verified": true,
   "windows_native_execution_tested": false,
   "physical_firmware_access": false,
-  "rom_export_implemented": false
+  "rom_export_implemented": false,
+  "version": "0.1.1",
+  "jpeg_missing_startup_regression_reproduced": true,
+  "png_fallback_without_jpeg_tested": true,
+  "all_45_default_jpeg_assets_have_verified_png_fallback": true,
+  "windows_jpeg_plugin_and_dependencies_verified": true
 }

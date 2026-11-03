@@ -9,4 +9,4 @@ Os pacotes da Machinist foram publicados a pedido do proprietário da placa e co
 
 O pacote de recursos gráficos contém somente imagens e documentação para edição; não inclui uma ROM ou NVRAM.
 
-O Covenant Graphics Studio analisa a 002 e salva/testa vínculos em projeto. A versão 0.1.0 não compila uma ROM gráfica nem grava a placa.
+O Covenant Graphics Studio analisa a 002 e salva/testa vínculos em projeto. A versão 0.1.1 não compila uma ROM gráfica nem grava a placa.

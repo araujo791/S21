@@ -1,2 +1,2 @@
-7c0c7c8fa182bb44d071e12f4a4912898eeee1201fe276d41eb16972816976a7  Covenant-Graphics-Studio-0.1.0-Windows-x64.zip
-7cdad056d822db4b01b1623eccf4ddf61bcd169fc8de491be6d3b5fd1411974b  Covenant-Graphics-Studio-0.1.0-Fontes.zip
+80945bbd482807e1977895aab0121c83c50b11587c674df43a0d6c20deb5f3e1  Covenant-Graphics-Studio-0.1.1-Windows-x64.zip
+85581c8a80b6804ad1d29aec6beee367625aefbcc12d95a4d6da394fee24aa32  Covenant-Graphics-Studio-0.1.1-Fontes.zip

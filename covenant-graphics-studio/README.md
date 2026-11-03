@@ -1,10 +1,18 @@
 # Covenant Graphics Studio — Windows portátil
 
-**[Baixar Windows x64 — portátil com executável](downloads/Covenant-Graphics-Studio-0.1.0-Windows-x64.zip?raw=true)** · [Baixar fontes](downloads/Covenant-Graphics-Studio-0.1.0-Fontes.zip?raw=true) · [Hashes SHA-256](downloads/SHA256SUMS.txt)
+**[Baixar Windows x64 — portátil com executável](downloads/Covenant-Graphics-Studio-0.1.1-Windows-x64.zip?raw=true)** · [Baixar fontes](downloads/Covenant-Graphics-Studio-0.1.1-Fontes.zip?raw=true) · [Hashes SHA-256](downloads/SHA256SUMS.txt)
 
 Aplicativo nativo para abrir sua Machinist X99D8 **002**, colocar a camada gráfica Covenant sobre os campos reais e trabalhar nos vínculos. Não usa navegador, WebView ou servidor.
 
 **Esta versão salva e testa um projeto de interface. Não gera uma ROM gráfica, não grava o chip e não altera variáveis EFI. O compilador/adaptador AMI de runtime continua sem implementação.**
+
+## Correção 0.1.1
+
+Corrigida a falha de inicialização `division by zero` do pacote Windows 0.1.0: faltava o plugin JPEG, e a imagem de fundo ficava com largura zero. O pacote agora inclui `qjpeg.dll` da mesma versão do Qt, verifica suas dependências e traz cópias PNG dos 45 recursos JPEG como alternativa de leitura. As imagens originais continuam intactas.
+
+O carregador rejeita imagens nulas antes de calcular a escala e mostra um erro descritivo. Erros inesperados geram `Covenant-Graphics-Studio-erro.txt` na pasta do app ou na pasta temporária. Não há envio automático desse arquivo.
+
+**Baixe a 0.1.1 e extraia em uma pasta nova. Não misture com os arquivos do pacote 0.1.0.** Projetos JSON anteriores continuam compatíveis quando usados com a mesma BIOS.
 
 ## Como usar no Windows 10/11 x64
 
