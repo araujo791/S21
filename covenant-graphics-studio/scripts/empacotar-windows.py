@@ -87,7 +87,7 @@ def main():
             if rel.as_posix().startswith('runtime/windows/') or (len(rel.parts)==2 and rel.parts[0]=='licenses' and rel.name in notices):
                 target=stage/rel;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(z.read(info))
     jpeg=install_jpeg_plugin(stage,args.qt_wheel)
-    files=[root/'covenant_graphics_studio.py',root/'README.md',root/'requirements.txt']
+    files=[root/'covenant_graphics_studio.py',root/'README.md',root/'MANUAL.md',root/'requirements.txt']
     for folder in ('covenant_studio','assets','native','scripts','tests'):
         files += [f for f in (root/folder).rglob('*') if f.is_file() and '__pycache__' not in f.parts and f.suffix!='.pyc']
     if (root/'docs/validation.json').is_file():files.append(root/'docs/validation.json')

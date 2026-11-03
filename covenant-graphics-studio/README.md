@@ -2,6 +2,8 @@
 
 **[Baixar Windows x64 — portátil com executável](downloads/Covenant-Graphics-Studio-0.1.1-Windows-x64.zip?raw=true)** · [Baixar fontes](downloads/Covenant-Graphics-Studio-0.1.1-Fontes.zip?raw=true) · [Hashes SHA-256](downloads/SHA256SUMS.txt)
 
+**[Manual completo em português](MANUAL.md)** · [Baixar manual offline e para impressão](downloads/Covenant-Graphics-Studio-0.1.1-Manual.zip?raw=true)
+
 Aplicativo nativo para abrir sua Machinist X99D8 **002**, colocar a camada gráfica Covenant sobre os campos reais e trabalhar nos vínculos. Não usa navegador, WebView ou servidor.
 
 **Esta versão salva e testa um projeto de interface. Não gera uma ROM gráfica, não grava o chip e não altera variáveis EFI. O compilador/adaptador AMI de runtime continua sem implementação.**
